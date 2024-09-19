@@ -25,7 +25,7 @@ Complete the following steps to run the template and provision resources on Azur
 
 The template provisions and deploys the required Azure resources for the app to run, which may take several minutes. When the process completes, your browser should open to the following page:
 
-:::image type="content" source="screenshot.png" alt-text="A screenshot of the template home page.":::
+![A screenshot of the deployed app.](screenshot.png "A screenshot of the deployed app.")
 
 The template completed the following tasks for you:
 
