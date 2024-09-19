@@ -1,0 +1,192 @@
+﻿@page "/demo"
+
+@using System.ComponentModel.DataAnnotations
+@using Azure.Identity
+@using Azure.Storage.Blobs
+@using Microsoft.Azure.Cosmos
+@inject CosmosClient cosmosClient
+@inject BlobServiceClient blobServiceClient
+
+<MudGrid>
+    <MudItem xs="12" sm="8">
+        <MudItem sm="12">
+            <MudText Typo="Typo.h2" GutterBottom="true">Sample ticket manager</MudText>
+            <MudDivider Class="my-6" />
+        </MudItem>
+        <MudPaper Class="my-6 pa-6">
+            The azd template deployed a sample app to Azure App Service and provisioned supporting resources. To test the app, fill out the form, select an attachment, and then click submit. The form data will be stored in Azure CosmosDB for NoSQL and the file will be stored in Blob Storage.
+        </MudPaper>
+        <MudPaper Class="pa-4">
+            <EditForm Model="ticket" OnValidSubmit="Submit">
+                <MudText Typo="Typo.h4" GutterBottom="true">Submit a new ticket</MudText><MudDivider />
+                <DataAnnotationsValidator />
+                <MudTextField Label="Title" @bind-Value="ticket.title" For="@(() => ticket.title)" />
+                <MudTextField Label="Description" Class="mt-3" @bind-Value="ticket.description" For="@(() => ticket.description)" />
+                <MudTextField Label="Notes" Class="mt-3 mb-8" @bind-Value="ticket.notes" For="@(() => ticket.notes)" />
+                <MudFileUpload Label="Attachment" Class="mt-3 mb-6" OnFilesChanged="SetFile" T="IBrowserFile">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                            Upload Attachment
+                        </MudButton><MudText>@fileName</MudText>
+                    </ActivatorContent>
+                </MudFileUpload>
+                @if (!loading)
+                {
+                    <MudButton ButtonType="ButtonType.Submit" class="mt-4 mb-4" Variant="Variant.Filled" Color="Color.Primary">Submit</MudButton>
+                }
+                else
+                {
+                    <div><MudProgressCircular Color="Color.Primary" Indeterminate="true" /></div>
+                }
+                <div>
+                    @if (success)
+                    {
+                        <MudText Color="Color.Success">Your ticket was submitted successfully!</MudText>
+                    }
+                    else if (!String.IsNullOrEmpty(error))
+                    {
+                        <MudText Color="@Color.Error">
+                            <ValidationSummary />
+                        </MudText>
+                    }
+                </div>
+            </EditForm>
+        </MudPaper>
+        @if (tickets.Count != 0)
+        {
+            <MudPaper Class="mt-12 pa-6">
+                <MudText Typo="Typo.h4" GutterBottom="true">Submitted tickets</MudText>
+                <MudDivider />
+                <MudTable Striped="true" Bordered="true" Items="@tickets" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        <MudTh>Nr</MudTh>
+                        <MudTh>Title</MudTh>
+                        <MudTh>Description</MudTh>
+                        <MudTh>Notes</MudTh>
+                        <MudTh>Attachment</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Nr">@context.id</MudTd>
+                        <MudTd DataLabel="Title">@context.title</MudTd>
+                        <MudTd DataLabel="Description">@context.description</MudTd>
+                        <MudTd DataLabel="Notes">@context.notes</MudTd>
+                        <MudTd DataLabel="Notes">@context.attachmentName</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        }
+        else if (loadingTickets)
+        {
+            <MudPaper Class="mt-12 pa-6">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" /> Loading tickets...
+            </MudPaper>
+        } else {
+            <MudPaper Class="mt-12 pa-6">
+                No tickets have been submitted yet.
+            </MudPaper>
+        }
+
+    </MudItem>
+</MudGrid>
+@code {
+    [SupplyParameterFromForm]
+    public SupportTicket? ticket { get; set; } = new();
+    Database? database;
+    Container? container;
+
+    bool loading = false;
+    bool loadingTickets = false;
+    string fileName;
+    string error;
+    bool success;
+
+    List<SupportTicket> tickets = new();
+
+    private void SetFile(InputFileChangeEventArgs eventArgs)
+    {
+        ticket.Attachment = eventArgs.File;
+        fileName = eventArgs.File.Name;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        database = cosmosClient.GetDatabase("Tickets");
+        container = database.GetContainer("Support");
+
+        tickets = await LoadTickets();
+    }
+
+    private async Task<List<SupportTicket>> LoadTickets()
+    {
+        loadingTickets = true;
+        database = cosmosClient.GetDatabase("Tickets");
+        container = database.GetContainer("Support");
+
+        List<SupportTicket> tickets = new();
+
+        var query = new QueryDefinition(query: "SELECT * FROM Support p WHERE p.department = @category")
+            .WithParameter("@category", "marketing");
+
+        using FeedIterator<SupportTicket> feed = container.GetItemQueryIterator<SupportTicket>(
+            queryDefinition: query
+        );
+
+        while (feed.HasMoreResults)
+        {
+            FeedResponse<SupportTicket> response = await feed.ReadNextAsync();
+            foreach (SupportTicket item in response)
+            {
+                tickets.Add(item);
+            }
+        }
+
+        loadingTickets = false;
+        return tickets;
+    }
+
+    private async Task Submit(EditContext context)
+    {
+        try
+        {
+            loading = true;
+            Random random = new(); // Random filename prefix to avoid conflicts
+
+            var blobName = "NA";
+            if (ticket.Attachment != null)
+            {
+                var containerClient = blobServiceClient.GetBlobContainerClient("attachments");
+                blobName = random.Next(0, 10000).ToString() + ticket.Attachment.Name;
+                await containerClient.UploadBlobAsync(blobName, ticket.Attachment.OpenReadStream());
+            }
+
+            SupportTicket item = new SupportTicket()
+                {
+                    id = random.Next(10000, 99999).ToString(),
+                    title = ticket.title,
+                    description = ticket.description,
+                    department = "marketing",
+                    notes = ticket.notes,
+                    attachmentName = blobName
+                };
+
+            ItemResponse<SupportTicket> response = await container.UpsertItemAsync<SupportTicket>(
+                item: item,
+                partitionKey: new PartitionKey("marketing")
+            );
+
+            tickets.Add(item);
+            loading = false;
+        }
+        catch (Exception e)
+        {
+            loading = false;
+            error = e.Message;
+        }
+
+        success = true;
+        ticket = new();
+        fileName = "";
+    }
+} 
