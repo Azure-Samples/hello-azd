@@ -13,6 +13,9 @@ param exists bool
 @description('Endpoint for Azure Cosmos DB for NoSQL account.')
 param databaseAccountEndpoint string
 
+@description('Blob endpoint for Azure Storage account.')
+param storageAccountBlobEndpoint string
+
 type managedIdentity = {
   resourceId: string
   clientId: string
@@ -32,6 +35,7 @@ module containerAppsApp '../core/host/container-app.bicep' = {
     secrets: {
         'azure-cosmos-db-nosql-endpoint': databaseAccountEndpoint
         'azure-managed-identity-client-id':  userAssignedManagedIdentity.clientId
+        'azure-storage-blob-endpoint': storageAccountBlobEndpoint
       }
     env: [
       {
@@ -41,6 +45,10 @@ module containerAppsApp '../core/host/container-app.bicep' = {
       {
         name: 'AZURE_MANAGED_IDENTITY_CLIENT_ID'
         secretRef: 'azure-managed-identity-client-id'
+      }
+      {
+        name: 'STORAGE_URL'
+        secretRef: 'azure-storage-blob-endpoint'
       }
     ]
     targetPort: 8080

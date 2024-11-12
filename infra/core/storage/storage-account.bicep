@@ -99,3 +99,4 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 output id string = storage.id
 output name string = storage.name
 output primaryEndpoints object = storage.properties.primaryEndpoints
+output blobEndpoint string = storage.properties.primaryEndpoints.blob

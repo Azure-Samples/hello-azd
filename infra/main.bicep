@@ -129,6 +129,7 @@ module web 'app/app.bicep' = {
   params: {
     appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
     databaseAccountEndpoint: cosmos.outputs.endpoint
+    storageAccountBlobEndpoint: storage.outputs.blobEndpoint
     containerAppsEnvironmentName: containerAppsEnv.outputs.environmentName
     containerRegistryName: containerAppsEnv.outputs.registryName
     userAssignedManagedIdentity: {
