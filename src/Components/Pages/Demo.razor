@@ -14,7 +14,7 @@
             <MudDivider Class="my-6" />
         </MudItem>
         <MudPaper Class="my-6 pa-6">
-            The azd template deployed a sample app to Azure App Service and provisioned supporting resources. To test the app, fill out the form, select an attachment, and then click submit. The form data will be stored in Azure CosmosDB for NoSQL and the file will be stored in Blob Storage.
+            The azd template deployed a sample app to Azure App Service and provisioned supporting resources. To test the app, fill out the form, select an attachment (must be smaller than 0.5 MB), and then click submit. The form data will be stored in Azure CosmosDB for NoSQL and the file will be stored in Blob Storage.
         </MudPaper>
         <MudPaper Class="pa-4">
             <EditForm Model="ticket" OnValidSubmit="Submit">
@@ -26,8 +26,8 @@
                 <MudFileUpload Label="Attachment" Class="mt-3 mb-6" OnFilesChanged="SetFile" T="IBrowserFile">
                     <ActivatorContent>
                         <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                        Color="Color.Primary"
+                        StartIcon="@Icons.Material.Filled.CloudUpload">
                             Upload Attachment
                         </MudButton><MudText>@fileName</MudText>
                     </ActivatorContent>
@@ -49,6 +49,7 @@
                     {
                         <MudText Color="@Color.Error">
                             <ValidationSummary />
+                            @error
                         </MudText>
                     }
                 </div>
@@ -168,15 +169,16 @@
 
             tickets.Add(item);
             loading = false;
+            error = "";
+            success = true;
+            ticket = new();
+            fileName = "";
         }
         catch (Exception e)
         {
             loading = false;
             error = e.Message;
+            success = false;
         }
-
-        success = true;
-        ticket = new();
-        fileName = "";
     }
 } 
