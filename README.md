@@ -15,6 +15,8 @@ Complete the following steps to run the template and provision resources on Azur
 
 1. [Install the Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd) on your device.
 
+1. [Install Docker Desktop](https://www.docker.com/products/docker-desktop/) on your device. This is needed to package the container app.
+
 1. In the command line tool of your choice, run the [`azd init`](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/reference#azd-init) command to clone and initialize this template repo.
 
     ```bash

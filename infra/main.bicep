@@ -47,6 +47,7 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
   location: location
+  tags: tags
 }
 
 // Add resources to be provisioned below.
@@ -129,6 +130,7 @@ module web 'app/app.bicep' = {
   params: {
     appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
     databaseAccountEndpoint: cosmos.outputs.endpoint
+    storageAccountBlobEndpoint: storage.outputs.blobEndpoint
     containerAppsEnvironmentName: containerAppsEnv.outputs.environmentName
     containerRegistryName: containerAppsEnv.outputs.registryName
     userAssignedManagedIdentity: {
