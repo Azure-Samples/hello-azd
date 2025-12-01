@@ -81,6 +81,7 @@ module storage './core/storage/storage-account.bicep' = {
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: location
     tags: tags
+    allowSharedKeyAccess: false
     containers: [
       {
         name: 'attachments'
