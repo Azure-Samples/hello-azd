@@ -1,34 +1,42 @@
 using MudBlazor.Services;
 using HelloAZD.Components;
-using Microsoft.Azure.Cosmos;
 using Azure.Identity;
 using Microsoft.Extensions.Azure;
+using HelloAZD;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
-var identity = new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = builder.Configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"] });
+var managedIdentityClientId = builder.Configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"];
+var identity = new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = managedIdentityClientId });
 
 builder.Services.AddAzureClients(clientBuilder =>
 {
-    // Register clients for each service
-    clientBuilder.AddBlobServiceClient(new Uri(builder.Configuration["STORAGE_URL"]));
-    clientBuilder.AddClient<CosmosClient, CosmosClientOptions>((options) =>
+    var storageUrl = builder.Configuration["STORAGE_URL"];
+    var tablesUrl = builder.Configuration["TABLES_URL"];
+    if (string.IsNullOrWhiteSpace(storageUrl))
     {
-    CosmosClient client = new(
-        accountEndpoint: builder.Configuration["AZURE_COSMOS_DB_NOSQL_ENDPOINT"]!,
-        tokenCredential: identity
-        );
-        return client;
-    });
+        throw new InvalidOperationException("STORAGE_URL is not configured.");
+    }
+    if (string.IsNullOrWhiteSpace(tablesUrl))
+    {
+        throw new InvalidOperationException("TABLES_URL is not configured.");
+    }
+    // Register clients for each service
+    clientBuilder.AddBlobServiceClient(new Uri(storageUrl));
+    clientBuilder.AddTableServiceClient(new Uri(tablesUrl));
+
     clientBuilder.UseCredential(identity);
 });
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Register TableStorageService for DI
+builder.Services.AddSingleton<TableStorageService>();
 
 var app = builder.Build();
 

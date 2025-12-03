@@ -63,16 +63,6 @@ module identity './app/user-assigned-identity.bicep' = {
   }
 }
 
-// Create a cosmos db account
-module cosmos 'app/cosmos.bicep' = {
-  name: 'cosmos'
-  scope: rg
-  params: {
-    userPrincipalId: principalId
-    managedIdentityId: identity.outputs.principalId
-  }
-}
-
 // Create a storage account
 module storage './core/storage/storage-account.bicep' = {
   name: 'storage'
@@ -85,6 +75,11 @@ module storage './core/storage/storage-account.bicep' = {
     containers: [
       {
         name: 'attachments'
+      }
+    ]
+    tables: [
+      {
+        name: 'tickets'
       }
     ]
   }
@@ -112,6 +107,28 @@ module identityAssignStorage './core/security/role.bicep' = {
   }
 }
 
+// Assign storage table data contributor to the user for local runs
+module userAssignTable './core/security/role.bicep' = {
+  name: 'assignTable'
+  scope: rg
+  params: {
+    principalId: principalId
+    roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // built-in role definition id for storage table data contributor
+    principalType: 'User'
+  }
+}
+
+// Assign storage table data contributor to the identity
+module identityAssignTable './core/security/role.bicep' = {
+  name: 'identityAssignTable'
+  scope: rg
+  params: {
+    principalId: identity.outputs.principalId
+    roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Container apps env and registry
 module containerAppsEnv './core/host/container-apps.bicep' = {
   name: 'container-apps'
@@ -130,8 +147,8 @@ module web 'app/app.bicep' = {
   scope: rg
   params: {
     appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
-    databaseAccountEndpoint: cosmos.outputs.endpoint
     storageAccountBlobEndpoint: storage.outputs.blobEndpoint
+    storageAccountTableEndpoint: storage.outputs.tableEndpoint
     containerAppsEnvironmentName: containerAppsEnv.outputs.environmentName
     containerRegistryName: containerAppsEnv.outputs.registryName
     userAssignedManagedIdentity: {

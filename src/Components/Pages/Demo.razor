@@ -3,9 +3,10 @@
 @using System.ComponentModel.DataAnnotations
 @using Azure.Identity
 @using Azure.Storage.Blobs
-@using Microsoft.Azure.Cosmos
-@inject CosmosClient cosmosClient
+@using Azure.Data.Tables
 @inject BlobServiceClient blobServiceClient
+@inject IConfiguration Configuration
+@inject HelloAZD.TableStorageService tableService
 
 <MudGrid>
     <MudItem xs="12" sm="8">
@@ -20,10 +21,10 @@
             <EditForm Model="ticket" OnValidSubmit="Submit">
                 <MudText Typo="Typo.h4" GutterBottom="true">Submit a new ticket</MudText><MudDivider />
                 <DataAnnotationsValidator />
-                <MudTextField Label="Title" @bind-Value="ticket.title" For="@(() => ticket.title)" />
-                <MudTextField Label="Description" Class="mt-3" @bind-Value="ticket.description" For="@(() => ticket.description)" />
-                <MudTextField Label="Notes" Class="mt-3 mb-8" @bind-Value="ticket.notes" For="@(() => ticket.notes)" />
-                <MudFileUpload Label="Attachment" Class="mt-3 mb-6" OnFilesChanged="SetFile" T="IBrowserFile">
+                <MudTextField Label="Title" @bind-Value="ticket!.title" For="@(() => ticket!.title)" />
+                <MudTextField Label="Description" Class="mt-3" @bind-Value="ticket!.description" For="@(() => ticket!.description)" />
+                <MudTextField Label="Notes" Class="mt-3 mb-8" @bind-Value="ticket!.notes" For="@(() => ticket!.notes)" />
+                <MudFileUpload Class="mt-3 mb-6" OnFilesChanged="SetFile" T="IBrowserFile">
                     <ActivatorContent>
                         <MudButton Variant="Variant.Filled"
                         Color="Color.Primary"
@@ -94,8 +95,7 @@
 @code {
     [SupplyParameterFromForm]
     public SupportTicket? ticket { get; set; } = new();
-    Database? database;
-    Container? container;
+    // Table clients handled by injected TableStorageService
 
     bool loading = false;
     bool loadingTickets = false;
@@ -107,33 +107,18 @@
 
     private void SetFile(InputFileChangeEventArgs eventArgs)
     {
+        if (ticket == null)
+        {
+            ticket = new();
+        }
         ticket.Attachment = eventArgs.File;
-        fileName = eventArgs.File.Name;
+        fileName = eventArgs.File?.Name ?? string.Empty;
     }
 
     protected override async Task OnInitializedAsync()
     {
-        database = cosmosClient.GetDatabase("Tickets");
-        container = database.GetContainer("Support");
-
         loadingTickets = true;
-
-        var query = new QueryDefinition(query: "SELECT * FROM Support p WHERE p.department = @category")
-            .WithParameter("@category", "marketing");
-
-        using FeedIterator<SupportTicket> feed = container.GetItemQueryIterator<SupportTicket>(
-            queryDefinition: query
-        );
-
-        while (feed.HasMoreResults)
-        {
-            FeedResponse<SupportTicket> response = await feed.ReadNextAsync();
-            foreach (SupportTicket item in response)
-            {
-                tickets.Add(item);
-            }
-        }
-
+        tickets = await tableService.GetTicketsAsync("helpdesk");
         loadingTickets = false;
     }
 
@@ -145,7 +130,7 @@
             Random random = new(); // Random filename prefix to avoid conflicts
 
             var blobName = "NA";
-            if (ticket.Attachment != null)
+            if (ticket!.Attachment != null)
             {
                 var containerClient = blobServiceClient.GetBlobContainerClient("attachments");
                 blobName = random.Next(0, 10000).ToString() + ticket.Attachment.Name;
@@ -155,17 +140,14 @@
             SupportTicket item = new SupportTicket()
                 {
                     id = random.Next(10000, 99999).ToString(),
-                    title = ticket.title,
-                    description = ticket.description,
-                    department = "marketing",
-                    notes = ticket.notes,
+                    title = ticket!.title,
+                    description = ticket!.description,
+                    department = "helpdesk",
+                    notes = ticket!.notes,
                     attachmentName = blobName
                 };
 
-            ItemResponse<SupportTicket> response = await container.UpsertItemAsync<SupportTicket>(
-                item: item,
-                partitionKey: new PartitionKey("marketing")
-            );
+            await tableService.UpsertTicketAsync(item);
 
             tickets.Add(item);
             loading = false;

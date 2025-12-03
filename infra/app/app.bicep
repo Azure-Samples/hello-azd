@@ -10,11 +10,11 @@ param containerRegistryName string
 param serviceName string = 'aca'
 param exists bool
 
-@description('Endpoint for Azure Cosmos DB for NoSQL account.')
-param databaseAccountEndpoint string
-
 @description('Blob endpoint for Azure Storage account.')
 param storageAccountBlobEndpoint string
+
+@description('Table endpoint for Azure Storage account.')
+param storageAccountTableEndpoint string
 
 type managedIdentity = {
   resourceId: string
@@ -33,15 +33,11 @@ module containerAppsApp '../core/host/container-app.bicep' = {
     location: location
     tags: union(tags, { 'azd-service-name': serviceName })
     secrets: {
-        'azure-cosmos-db-nosql-endpoint': databaseAccountEndpoint
         'azure-managed-identity-client-id':  userAssignedManagedIdentity.clientId
         'azure-storage-blob-endpoint': storageAccountBlobEndpoint
+        'azure-storage-table-endpoint': storageAccountTableEndpoint
       }
     env: [
-      {
-        name: 'AZURE_COSMOS_DB_NOSQL_ENDPOINT' // Name of the environment variable referenced in the application
-        secretRef: 'azure-cosmos-db-nosql-endpoint' // Reference to secret
-      }
       {
         name: 'AZURE_MANAGED_IDENTITY_CLIENT_ID'
         secretRef: 'azure-managed-identity-client-id'
@@ -49,6 +45,10 @@ module containerAppsApp '../core/host/container-app.bicep' = {
       {
         name: 'STORAGE_URL'
         secretRef: 'azure-storage-blob-endpoint'
+      }
+      {
+        name: 'TABLES_URL'
+        secretRef: 'azure-storage-table-endpoint'
       }
     ]
     targetPort: 8080

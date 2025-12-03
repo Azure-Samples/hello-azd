@@ -5,15 +5,15 @@ namespace HelloAZD
 {
     public class SupportTicket
     {
-        public string id { get; set; }
-        public string department { get; set; }
+        public string id { get; set; } = string.Empty;
+        public string department { get; set; } = string.Empty;
         [Required]
-        public string title { get; set; }
+        public string title { get; set; } = string.Empty;
         [Required]
-        public string description { get; set; }
+        public string description { get; set; } = string.Empty;
         [Required]
-        public string notes { get; set; }
-        public string attachmentName { get; set; }
-        public IBrowserFile Attachment { get; set; }
+        public string notes { get; set; } = string.Empty;
+        public string attachmentName { get; set; } = string.Empty;
+        public IBrowserFile? Attachment { get; set; }
     }
 }
