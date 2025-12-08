@@ -2,8 +2,6 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Azure.Storage.Blobs
-@using Microsoft.Azure.Cosmos
-@inject CosmosClient cosmosClient
 
 <PageTitle>Home</PageTitle>
 <MudGrid>
@@ -26,25 +24,25 @@
                 <MudText>Packaged up your app code for deployment</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Created an Azure App Service and Azure App Service Plan</MudText>
+                <MudText>Created an Azure Container Registry to build and store the container image</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Created an Azure Storage account to hold documents</MudText>
+                <MudText>Created an Azure Container Apps service to deploy the app to</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Created an Azure CosmosDB for NoSQL account, database and container</MudText>
+                <MudText>Created an Azure Storage account to hold table data and documents</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
                 <MudText>Created a managed identity and assigned it to the Azure App Service</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Assigned roles to the managed identity to enable the app to access Azure Storage and Azure CosmosDB for NoSQL</MudText>
+                <MudText>Assigned roles to the managed identity to enable the app to access the Azure Storage Account</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Configured environment settings to connect the app to the Azure Storage and Azure CosmosDB for NoSQL endpoints</MudText>
+                <MudText>Configured environment settings to connect the app to the Azure Storage Account endpoints</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Deployed the app to Azure App Service</MudText>
+                <MudText>Deployed the app to Azure Container Apps</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Success">
                 <MudText>The app is ready to use!</MudText>
@@ -76,8 +74,8 @@
                 </MudLink>
             </MudListItem>
             <MudListItem>
-                <MudLink Href="https://learn.microsoft.com/en-us/training/paths/azure-developer-cli/" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-                    <b>Azure Developer CLI  training modules</b>
+                <MudLink Href="https://azure.github.io/ai-app-templates/" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
+                    <b>AI template gallery</b>
                 </MudLink>
             </MudListItem>
         </MudList>

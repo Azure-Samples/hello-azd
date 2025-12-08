@@ -24,6 +24,7 @@ services:
     host: containerapp
     docker:
       path: ./Dockerfile
+      remoteBuild: true
 #   ## An example for a NodeJS API, located in src/api.
 #   nodejs-api:
 #     language: js
