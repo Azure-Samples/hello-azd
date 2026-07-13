@@ -16,6 +16,13 @@ param location string
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
+@description('Type of the principal referenced by principalId. Use \'User\' for local dev and \'ServicePrincipal\' for pipeline/CI runs.')
+@allowed([
+  'User'
+  'ServicePrincipal'
+])
+param principalType string = 'User'
+
 param storageAccountName string = ''
 param containerAppsEnvName string = ''
 param containerAppsAppName string = ''
@@ -92,7 +99,7 @@ module userAssignStorage './core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // built-in role definition id for storage blob data contributor
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
@@ -114,7 +121,7 @@ module userAssignTable './core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // built-in role definition id for storage table data contributor
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
