@@ -20,8 +20,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      # NOTE FOR SECURITY SCANNERS: The following are NON-SECRET public identifiers,
+      # not credentials. AZURE_CLIENT_ID and AZURE_TENANT_ID are Entra ID GUIDs read
+      # from GitHub Actions *variables* (vars.*), not secrets. Authentication uses
+      # secretless OIDC / federated credentials (see id-token: write above and
+      # --federated-credential-provider "github" below). No client secret exists.
+      # These variable names are fixed by `azd pipeline config` and cannot be renamed.
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}   # gitleaks:allow # trufflehog:ignore # pragma: allowlist secret # not-a-secret: public Entra app (client) ID
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}   # gitleaks:allow # trufflehog:ignore # pragma: allowlist secret # not-a-secret: public Entra tenant ID
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
