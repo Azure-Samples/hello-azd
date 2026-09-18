@@ -1,19 +1,22 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Components.Forms;
 
-namespace HelloAZD
+namespace HelloAZD;
+
+public sealed class SupportTicket
 {
-    public class SupportTicket
-    {
-        public string id { get; set; } = string.Empty;
-        public string department { get; set; } = string.Empty;
-        [Required]
-        public string title { get; set; } = string.Empty;
-        [Required]
-        public string description { get; set; } = string.Empty;
-        [Required]
-        public string notes { get; set; } = string.Empty;
-        public string attachmentName { get; set; } = string.Empty;
-        public IBrowserFile? Attachment { get; set; }
-    }
+    public string Id { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
+
+    [Required, StringLength(100)]
+    public string Title { get; set; } = string.Empty;
+
+    [Required, StringLength(1_000)]
+    public string Description { get; set; } = string.Empty;
+
+    [Required, StringLength(1_000)]
+    public string Notes { get; set; } = string.Empty;
+
+    public string AttachmentName { get; set; } = string.Empty;
+    public IBrowserFile? Attachment { get; set; }
 }

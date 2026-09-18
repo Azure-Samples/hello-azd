@@ -1,58 +1,64 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Azure;
 using Azure.Data.Tables;
-using Azure.Identity;
-using Microsoft.Extensions.Configuration;
 
-namespace HelloAZD
+namespace HelloAZD;
+
+public interface ITicketStorageService
 {
-    public class TableStorageService
+    Task<List<SupportTicket>> GetTicketsAsync(
+        string partitionKey,
+        CancellationToken cancellationToken = default);
+
+    Task UpsertTicketAsync(
+        SupportTicket ticket,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class TableStorageService : ITicketStorageService
+{
+    private const string TableName = "tickets";
+
+    private readonly TableClient _tableClient;
+
+    public TableStorageService(TableServiceClient serviceClient)
     {
-        private readonly TableClient _tableClient;
+        _tableClient = serviceClient.GetTableClient(TableName);
+    }
 
-        public TableStorageService(IConfiguration configuration)
+    public async Task<List<SupportTicket>> GetTicketsAsync(
+        string partitionKey,
+        CancellationToken cancellationToken = default)
+    {
+        var tickets = new List<SupportTicket>();
+        await foreach (var entity in _tableClient.QueryAsync<TableEntity>(
+            entity => entity.PartitionKey == partitionKey,
+            cancellationToken: cancellationToken))
         {
-            var tablesUrl = configuration["TABLES_URL"] ?? throw new ArgumentNullException("TABLES_URL");
-            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            tickets.Add(new SupportTicket
             {
-                ManagedIdentityClientId = configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"]
+                Id = entity.GetString("id") ?? string.Empty,
+                Title = entity.GetString("title") ?? string.Empty,
+                Description = entity.GetString("description") ?? string.Empty,
+                Department = entity.PartitionKey,
+                Notes = entity.GetString("notes") ?? string.Empty,
+                AttachmentName = entity.GetString("attachmentName") ?? string.Empty
             });
-            var serviceClient = new TableServiceClient(new Uri(tablesUrl), credential);
-            _tableClient = serviceClient.GetTableClient("tickets");
-            _tableClient.CreateIfNotExists();
         }
 
-        public async Task<List<SupportTicket>> GetTicketsAsync(string partitionKey)
-        {
-            var list = new List<SupportTicket>();
-            await foreach (var entity in _tableClient.QueryAsync<TableEntity>(e => e.PartitionKey == partitionKey))
-            {
-                list.Add(new SupportTicket
-                {
-                    id = entity.GetString("id") ?? string.Empty,
-                    title = entity.GetString("title") ?? string.Empty,
-                    description = entity.GetString("description") ?? string.Empty,
-                    department = entity.PartitionKey,
-                    notes = entity.GetString("notes") ?? string.Empty,
-                    attachmentName = entity.GetString("attachmentName") ?? string.Empty
-                });
-            }
-            return list;
-        }
+        return tickets;
+    }
 
-        public async Task UpsertTicketAsync(SupportTicket ticket)
+    public async Task UpsertTicketAsync(
+        SupportTicket ticket,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = new TableEntity(partitionKey: ticket.Department, rowKey: ticket.Id)
         {
-            var entity = new TableEntity(partitionKey: ticket.department, rowKey: ticket.id)
-            {
-                { "id", ticket.id },
-                { "title", ticket.title },
-                { "description", ticket.description },
-                { "notes", ticket.notes },
-                { "attachmentName", ticket.attachmentName }
-            };
-            await _tableClient.UpsertEntityAsync(entity);
-        }
+            { "id", ticket.Id },
+            { "title", ticket.Title },
+            { "description", ticket.Description },
+            { "notes", ticket.Notes },
+            { "attachmentName", ticket.AttachmentName }
+        };
+        await _tableClient.UpsertEntityAsync(entity, cancellationToken: cancellationToken);
     }
 }

@@ -1,6 +1,9 @@
 ﻿@inherits LayoutComponentBase
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudText Typo="Typo.h5" Class="ml-3">Hello AZD</MudText>
@@ -12,8 +15,6 @@
         @Body
     </MudMainContent>
 </MudLayout>
-
-
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode = true;
@@ -30,18 +31,6 @@
             LayoutProperties = new LayoutProperties()
         };
     }
-
-
-    private void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
-
-    private void DarkModeToggle()
-    {
-        _isDarkMode = !_isDarkMode;
-    }
-
     private readonly PaletteLight _lightPalette = new()
     {
         Black = "#110e2d",
@@ -79,12 +68,6 @@
         TableLines = "#33323e",
         Divider = "#292838",
         OverlayLight = "#1e1e2d80",
-    };
-
-    public string DarkLightModeButtonIcon => _isDarkMode switch
-    {
-        true => Icons.Material.Rounded.AutoMode,
-        false => Icons.Material.Outlined.DarkMode,
     };
 }
 

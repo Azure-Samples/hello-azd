@@ -1,4 +1,4 @@
-metadata description = 'Creates a role assignment for a service principal.'
+metadata description = 'Creates an Azure role assignment.'
 param principalId string
 
 @allowed([

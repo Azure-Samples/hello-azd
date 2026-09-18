@@ -37,3 +37,16 @@ services:
 #     project: ./src/react-app
 #     host: appservice
 #     dist: build
+
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: |
+        dotnet user-secrets set "STORAGE_URL" "$Env:STORAGE_URL" --project ./src/HelloAZD.csproj
+        dotnet user-secrets set "TABLES_URL" "$Env:TABLES_URL" --project ./src/HelloAZD.csproj
+    posix:
+      shell: sh
+      run: |
+        dotnet user-secrets set "STORAGE_URL" "$STORAGE_URL" --project ./src/HelloAZD.csproj
+        dotnet user-secrets set "TABLES_URL" "$TABLES_URL" --project ./src/HelloAZD.csproj
