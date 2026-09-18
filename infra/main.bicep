@@ -210,8 +210,8 @@ output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 output STORAGE_URL string = storage.outputs.blobEndpoint
 output TABLES_URL string = storage.outputs.tableEndpoint
 
-// // Application outputs
-// output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.uri
+// Application outputs
+output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.uri
 // output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnv.outputs.environmentName
 
 // Identity outputs

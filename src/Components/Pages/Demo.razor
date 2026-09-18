@@ -11,7 +11,7 @@
             <MudDivider Class="my-6" />
         </MudItem>
         <MudPaper Class="my-6 pa-6">
-            The azd template deployed this sample app to Azure Container Apps. Submit the form with an optional attachment smaller than 0.5 MB. Ticket data is stored in Table Storage, and attachments are stored in Blob Storage. This demo is public, so don't submit sensitive data.
+            The azd template deployed this sample app to Azure Container Apps. Submit the form with an optional attachment up to 2 MB. Ticket data is stored in Table Storage, and attachments are stored in Blob Storage. This demo is public, so don't submit sensitive data.
         </MudPaper>
         <MudPaper Class="pa-4">
             <EditForm Model="_ticket" OnValidSubmit="SubmitAsync">
@@ -103,8 +103,16 @@
 
     private void SetFile(InputFileChangeEventArgs eventArgs)
     {
-        _ticket.Attachment = eventArgs.File;
+        var file = eventArgs.File;
         _submitSucceeded = false;
+        if (file.Size > AttachmentStorageService.MaxAttachmentSize)
+        {
+            _ticket.Attachment = null;
+            _errorMessage = "Attachments must be 2 MB or smaller.";
+            return;
+        }
+
+        _ticket.Attachment = file;
         _errorMessage = null;
     }
 
@@ -114,6 +122,16 @@
         try
         {
             _tickets.AddRange(await TicketStorageService.GetTicketsAsync(PartitionKey));
+        }
+        catch (AttachmentTooLargeException exception)
+        {
+            Logger.LogWarning(exception, "Attachment exceeded the allowed size");
+            _errorMessage = exception.Message;
+        }
+        catch (IOException exception)
+        {
+            Logger.LogWarning(exception, "Attachment upload could not be read");
+            _errorMessage = "The attachment could not be uploaded. Make sure it is 2 MB or smaller.";
         }
         catch (Exception exception)
         {

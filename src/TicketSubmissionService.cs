@@ -12,7 +12,7 @@ public interface IAttachmentStorageService
 public sealed class AttachmentStorageService(BlobServiceClient blobServiceClient)
     : IAttachmentStorageService
 {
-    private const long MaxAttachmentSize = 512_000;
+    public const long MaxAttachmentSize = 2 * 1024 * 1024;
     private readonly BlobContainerClient _containerClient =
         blobServiceClient.GetBlobContainerClient("attachments");
 
@@ -20,6 +20,11 @@ public sealed class AttachmentStorageService(BlobServiceClient blobServiceClient
         IBrowserFile file,
         CancellationToken cancellationToken = default)
     {
+        if (file.Size > MaxAttachmentSize)
+        {
+            throw new AttachmentTooLargeException();
+        }
+
         var blobName = Guid.NewGuid().ToString("N");
         await using var stream = file.OpenReadStream(MaxAttachmentSize, cancellationToken);
         await _containerClient.UploadBlobAsync(blobName, stream, cancellationToken);
@@ -87,3 +92,6 @@ public sealed class TicketSubmissionService(
         }
     }
 }
+
+public sealed class AttachmentTooLargeException()
+    : Exception("Attachments must be 2 MB or smaller.");

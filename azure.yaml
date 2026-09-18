@@ -50,3 +50,36 @@ hooks:
       run: |
         dotnet user-secrets set "STORAGE_URL" "$STORAGE_URL" --project ./src/HelloAZD.csproj
         dotnet user-secrets set "TABLES_URL" "$TABLES_URL" --project ./src/HelloAZD.csproj
+  postdeploy:
+    windows:
+      shell: pwsh
+      run: |
+        $healthUrl = "$Env:AZURE_CONTAINER_APP_ENDPOINT/healthz"
+        Write-Host "Waiting for the application to become ready..."
+        for ($attempt = 1; $attempt -le 90; $attempt++) {
+          try {
+            $response = Invoke-WebRequest -Uri $healthUrl -TimeoutSec 5
+            if ($response.StatusCode -eq 200) {
+              Write-Host "Application is ready: $Env:AZURE_CONTAINER_APP_ENDPOINT"
+              exit 0
+            }
+          } catch {}
+          Start-Sleep -Seconds 2
+        }
+        throw "Application did not become ready at $healthUrl"
+    posix:
+      shell: sh
+      run: |
+        health_url="$AZURE_CONTAINER_APP_ENDPOINT/healthz"
+        echo "Waiting for the application to become ready..."
+        attempt=1
+        while [ "$attempt" -le 90 ]; do
+          if curl --fail --silent --show-error --max-time 5 "$health_url" > /dev/null; then
+            echo "Application is ready: $AZURE_CONTAINER_APP_ENDPOINT"
+            exit 0
+          fi
+          attempt=$((attempt + 1))
+          sleep 2
+        done
+        echo "Application did not become ready at $health_url" >&2
+        exit 1

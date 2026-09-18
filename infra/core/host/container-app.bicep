@@ -87,44 +87,6 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
           image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           name: containerName
           env: env
-          probes: [
-            {
-              type: 'Startup'
-              httpGet: {
-                path: '/'
-                port: targetPort
-                scheme: 'HTTP'
-              }
-              initialDelaySeconds: 1
-              periodSeconds: 2
-              timeoutSeconds: 2
-              failureThreshold: 10
-            }
-            {
-              type: 'Readiness'
-              httpGet: {
-                path: '/'
-                port: targetPort
-                scheme: 'HTTP'
-              }
-              initialDelaySeconds: 1
-              periodSeconds: 2
-              timeoutSeconds: 2
-              failureThreshold: 10
-            }
-            {
-              type: 'Liveness'
-              httpGet: {
-                path: '/'
-                port: targetPort
-                scheme: 'HTTP'
-              }
-              initialDelaySeconds: 10
-              periodSeconds: 10
-              timeoutSeconds: 5
-              failureThreshold: 3
-            }
-          ]
           resources: {
             cpu: json(containerCpuCoreCount)
             memory: containerMemory
