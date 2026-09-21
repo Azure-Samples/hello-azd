@@ -32,15 +32,18 @@ The template provisions and deploys the required Azure resources for the app to 
 The template completed the following tasks for you:
 
 - Packaged up your app code for deployment.
-- Created an Azure App Service and Azure App Service Plan.
-- Created an Azure Storage account to hold documents.
-- Created an Azure CosmosDB for NoSQL account, database and container.
-- Created a managed identity and assigned it to the Azure App Service.
-- Assigned roles to the managed identity to enable the app to access Azure Storage and Azure CosmosDB for NoSQL.
-- Configured environment settings to connect the app to the Azure Storage and Azure CosmosDB for NoSQL endpoints.
-- Deployed the app to Azure App Service.
+- Created an Azure Container Registry.
+- Created an Azure Container Apps environment and app.
+- Created an Azure Storage account with an `attachments` blob container and `tickets` table.
+- Created a managed identity and assigned it to the Container App.
+- Assigned identity-based Blob and Table Storage access.
+- Configured environment settings for Azure Storage endpoints.
+- Deployed the app to Azure Container Apps.
 
 The app is now ready to use!
+
+> [!IMPORTANT]
+> The deployed demo is publicly accessible and doesn't require users to sign in. Don't submit sensitive or production data, and run `azd down` when you finish exploring the template.
 
 ## Additional resources
 

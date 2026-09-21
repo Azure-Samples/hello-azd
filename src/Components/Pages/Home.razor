@@ -1,8 +1,5 @@
 ﻿@page "/"
 
-@using System.ComponentModel.DataAnnotations
-@using Azure.Storage.Blobs
-
 <PageTitle>Home</PageTitle>
 <MudGrid>
     <MudItem sm="12" >
@@ -33,13 +30,13 @@
                 <MudText>Created an Azure Storage account to hold table data and documents</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Created a managed identity and assigned it to the Azure App Service</MudText>
+                <MudText>Created a managed identity and assigned it to the Azure Container App</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Assigned roles to the managed identity to enable the app to access the Azure Storage Account</MudText>
+                <MudText>Assigned roles to the managed identity to enable the app to access the Azure Storage account</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
-                <MudText>Configured environment settings to connect the app to the Azure Storage Account endpoints</MudText>
+                <MudText>Configured environment settings to connect the app to the Azure Storage endpoints</MudText>
             </MudTimelineItem>
             <MudTimelineItem Color="Color.Info">
                 <MudText>Deployed the app to Azure Container Apps</MudText>

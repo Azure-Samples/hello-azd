@@ -62,11 +62,13 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // https://github.com/Azure-Samples/todo-python-mongo/tree/main/infra
 
 // Create a user assigned identity
-module identity './app/user-assigned-identity.bicep' = {
+module identity './core/security/user-assigned-identity.bicep' = {
   name: 'identity'
   scope: rg
   params: {
     name: 'hello-azd-identity'
+    location: location
+    tags: tags
   }
 }
 
@@ -78,7 +80,6 @@ module storage './core/storage/storage-account.bicep' = {
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: location
     tags: tags
-    allowSharedKeyAccess: false
     containers: [
       {
         name: 'attachments'
@@ -136,37 +137,58 @@ module identityAssignTable './core/security/role.bicep' = {
   }
 }
 
-// Container apps env and registry
-module containerAppsEnv './core/host/container-apps.bicep' = {
-  name: 'container-apps'
+// Container Apps environment
+module containerAppsEnv './core/host/container-apps-environment.bicep' = {
+  name: 'container-apps-environment'
   scope: rg
   params: {
-    name: 'app'
-    containerAppsEnvironmentName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
-    containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    name: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
     location: location
+    tags: tags
+  }
+}
+
+// Container registry
+module containerRegistry './core/host/container-registry.bicep' = {
+  name: 'container-registry'
+  scope: rg
+  params: {
+    name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    location: location
+    tags: tags
+    skuName: 'Standard'
   }
 }
 
 // Container app
-module web 'app/app.bicep' = {
+module web './core/host/container-app.bicep' = {
   name: serviceName
   scope: rg
   params: {
-    appName: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
-    storageAccountBlobEndpoint: storage.outputs.blobEndpoint
-    storageAccountTableEndpoint: storage.outputs.tableEndpoint
-    containerAppsEnvironmentName: containerAppsEnv.outputs.environmentName
-    containerRegistryName: containerAppsEnv.outputs.registryName
-    userAssignedManagedIdentity: {
-      resourceId: identity.outputs.resourceId
-      clientId: identity.outputs.clientId
-    }
+    name: !empty(containerAppsAppName) ? containerAppsAppName : '${abbrs.appContainerApps}${resourceToken}'
+    containerAppsEnvironmentName: containerAppsEnv.outputs.name
+    containerRegistryName: containerRegistry.outputs.name
+    env: [
+      {
+        name: 'AZURE_MANAGED_IDENTITY_CLIENT_ID'
+        value: identity.outputs.clientId
+      }
+      {
+        name: 'STORAGE_URL'
+        value: storage.outputs.blobEndpoint
+      }
+      {
+        name: 'TABLES_URL'
+        value: storage.outputs.tableEndpoint
+      }
+    ]
     location: location
-    tags: tags
-    serviceName: serviceName
-    exists: false
+    tags: union(tags, { 'azd-service-name': serviceName })
     identityName: identity.outputs.name
+    containerCpuCoreCount: '1.0'
+    containerMemory: '2.0Gi'
+    containerMinReplicas: 1
+    targetPort: 8080
   }
 }
 
@@ -181,12 +203,16 @@ module web 'app/app.bicep' = {
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 // Container outputs
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerAppsEnv.outputs.registryLoginServer
-output AZURE_CONTAINER_REGISTRY_NAME string = containerAppsEnv.outputs.registryName
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
+output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 
-// // Application outputs
-// output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.endpoint
-// output AZURE_CONTAINER_ENVIRONMENT_NAME string = web.outputs.envName
+// Local application outputs
+output STORAGE_URL string = storage.outputs.blobEndpoint
+output TABLES_URL string = storage.outputs.tableEndpoint
+
+// Application outputs
+output AZURE_CONTAINER_APP_ENDPOINT string = web.outputs.uri
+// output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnv.outputs.environmentName
 
 // Identity outputs
 output AZURE_USER_ASSIGNED_IDENTITY_NAME string = identity.outputs.name
